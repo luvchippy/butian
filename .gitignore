@@ -1,0 +1,14 @@
+logs/
+targets/
+loot/
+*.pyc
+__pycache__/
+.venv/
+venv/
+.DS_Store
+*.log
+node_modules/
+# 本地凭据，绝不入库
+config.yaml
+.env
+*fofa*.local

